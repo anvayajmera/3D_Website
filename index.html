@@ -154,9 +154,11 @@
 
             if (moveForward) {
                 rover.translateZ(-0.1); // Move forward
+                detectCollisions();
             }
             if (moveBackward) {
                 rover.translateZ(0.1); // Move backward
+                detectCollisions();
             }
 
             // Apply gravity
@@ -186,6 +188,21 @@
                 scene.add(rock);
                 objects.push(rock);
             }
+        }
+
+        function detectCollisions() {
+            const roverBox = new THREE.Box3().setFromObject(rover);
+
+            objects.forEach(object => {
+                if (object !== rover) {
+                    const objectBox = new THREE.Box3().setFromObject(object);
+                    if (roverBox.intersectsBox(objectBox)) {
+                        // Basic collision response: stop the rover
+                        moveForward = false;
+                        moveBackward = false;
+                    }
+                }
+            });
         }
 
         function onWindowResize() {
@@ -225,14 +242,11 @@
             document.body.appendChild(controlsDiv);
         }
 
-        function createControlButton(label, onPressStart, onPressEnd) {
+        function createControlButton(label, onMouseDown, onMouseUp) {
             const button = document.createElement('button');
             button.textContent = label;
-            button.onmousedown = onPressStart;
-            button.onmouseup = onPressEnd;
-            button.ontouchstart = onPressStart;
-            button.ontouchend = onPressEnd;
-            button.onclick = () => false; // Prevents default click behavior
+            button.onmousedown = onMouseDown;
+            if (onMouseUp) button.onmouseup = onMouseUp;
             return button;
         }
 
