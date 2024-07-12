@@ -11,6 +11,7 @@
             position: absolute;
             bottom: 10px;
             left: 10px;
+            z-index: 1000;
         }
         button {
             font-size: 18px;
@@ -25,6 +26,8 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script>
         let scene, camera, renderer, rover, controls;
+        let moveForward = false;
+        let moveBackward = false;
 
         function init() {
             // Scene setup
@@ -33,24 +36,17 @@
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.shadowMap.enabled = true;
-            renderer.setClearColor(new THREE.Color(0xeeeeee)); // Set background color
+            renderer.setClearColor(new THREE.Color(0x000000)); // Set background color to black
             document.body.appendChild(renderer.domElement);
 
             // Mars surface
-            const marsTexture = new THREE.TextureLoader().load('https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/terrain/sandyground.jpg');
+            const marsTexture = new THREE.TextureLoader().load('mars.png'); // Replace with your mars.png texture
             const marsGeometry = new THREE.PlaneGeometry(100, 100, 50, 50);
             const marsMaterial = new THREE.MeshStandardMaterial({ map: marsTexture });
             const marsSurface = new THREE.Mesh(marsGeometry, marsMaterial);
             marsSurface.rotation.x = -Math.PI / 2;
             marsSurface.receiveShadow = true;
             scene.add(marsSurface);
-
-            // Create some bumps and craters
-            for (let i = 0; i < marsGeometry.attributes.position.count; i++) {
-                const z = Math.random() * 2 - 1;
-                marsGeometry.attributes.position.setZ(i, z);
-            }
-            marsGeometry.computeVertexNormals();
 
             // Rover
             const roverGroup = new THREE.Group();
@@ -128,8 +124,12 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            // Rover animation (simple forward movement)
-            rover.position.x += 0.01;
+            if (moveForward) {
+                rover.translateZ(-0.1); // Move forward
+            }
+            if (moveBackward) {
+                rover.translateZ(0.1); // Move backward
+            }
 
             controls.update();
             renderer.render(scene, camera);
@@ -146,32 +146,40 @@
             controlsDiv.id = 'controls';
 
             const forwardButton = createControlButton('Forward', () => {
-                rover.position.z -= 0.1;
+                moveForward = true;
+            }, () => {
+                moveForward = false;
             });
             controlsDiv.appendChild(forwardButton);
 
             const backButton = createControlButton('Backward', () => {
-                rover.position.z += 0.1;
+                moveBackward = true;
+            }, () => {
+                moveBackward = false;
             });
             controlsDiv.appendChild(backButton);
 
             const leftButton = createControlButton('Left', () => {
-                rover.rotation.y += Math.PI / 4;
+                rover.rotateY(Math.PI / 4);
             });
             controlsDiv.appendChild(leftButton);
 
             const rightButton = createControlButton('Right', () => {
-                rover.rotation.y -= Math.PI / 4;
+                rover.rotateY(-Math.PI / 4);
             });
             controlsDiv.appendChild(rightButton);
 
             document.body.appendChild(controlsDiv);
         }
 
-        function createControlButton(label, onClick) {
+        function createControlButton(label, onPressStart, onPressEnd) {
             const button = document.createElement('button');
             button.textContent = label;
-            button.onclick = onClick;
+            button.onmousedown = onPressStart;
+            button.onmouseup = onPressEnd;
+            button.ontouchstart = onPressStart;
+            button.ontouchend = onPressEnd;
+            button.onclick = () => false; // Prevents default click behavior
             return button;
         }
 
