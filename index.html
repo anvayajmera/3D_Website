@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mars Rover</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script>
+        let scene, camera, renderer, rover, controls;
+
+        function init() {
+            // Scene setup
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            // Mars surface
+            const marsTexture = new THREE.TextureLoader().load('https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/terrain/sandyground.jpg');
+            const marsGeometry = new THREE.PlaneGeometry(100, 100, 50, 50);
+            const marsMaterial = new THREE.MeshStandardMaterial({ map: marsTexture });
+            const marsSurface = new THREE.Mesh(marsGeometry, marsMaterial);
+            marsSurface.rotation.x = -Math.PI / 2;
+            marsSurface.receiveShadow = true;
+            scene.add(marsSurface);
+
+            // Create some bumps and craters
+            for (let i = 0; i < marsGeometry.attributes.position.count; i++) {
+                const z = Math.random() * 2 - 1;
+                marsGeometry.attributes.position.setZ(i, z);
+            }
+            marsGeometry.computeVertexNormals();
+
+            // Rover
+            const roverGroup = new THREE.Group();
+
+            // Body
+            const bodyGeometry = new THREE.BoxGeometry(2, 0.5, 1);
+            const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 0.5;
+            body.castShadow = true;
+            roverGroup.add(body);
+
+            // Mast (camera)
+            const mastGeometry = new THREE.CylinderGeometry(0.1, 0.1, 1);
+            const mastMaterial = new THREE.MeshStandardMaterial({ color: 0x404040 });
+            const mast = new THREE.Mesh(mastGeometry, mastMaterial);
+            mast.position.set(0, 1, 0);
+            mast.castShadow = true;
+            roverGroup.add(mast);
+
+            // Solar panels
+            const panelGeometry = new THREE.BoxGeometry(1.5, 0.1, 0.5);
+            const panelMaterial = new THREE.MeshStandardMaterial({ color: 0x0000ff });
+            const leftPanel = new THREE.Mesh(panelGeometry, panelMaterial);
+            const rightPanel = new THREE.Mesh(panelGeometry, panelMaterial);
+            leftPanel.position.set(-1.75, 0.6, 0);
+            rightPanel.position.set(1.75, 0.6, 0);
+            leftPanel.castShadow = true;
+            rightPanel.castShadow = true;
+            roverGroup.add(leftPanel);
+            roverGroup.add(rightPanel);
+
+            // Wheels
+            const wheelGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.5, 32);
+            const wheelMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
+            const createWheel = (x, y, z) => {
+                const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+                wheel.rotation.z = Math.PI / 2;
+                wheel.position.set(x, y, z);
+                wheel.castShadow = true;
+                roverGroup.add(wheel);
+            };
+
+            createWheel(1, 0.2, 0.5);
+            createWheel(1, 0.2, -0.5);
+            createWheel(-1, 0.2, 0.5);
+            createWheel(-1, 0.2, -0.5);
+
+            roverGroup.position.y = 0.5;
+            scene.add(roverGroup);
+            rover = roverGroup;
+
+            // Lighting
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(5, 10, 7.5).normalize();
+            light.castShadow = true;
+            scene.add(light);
+
+            // Ambient light for better visibility
+            const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
+            scene.add(ambientLight);
+
+            camera.position.set(10, 10, 10);
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize, false);
+
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Rover animation (simple forward movement)
+            rover.position.x += 0.01;
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
