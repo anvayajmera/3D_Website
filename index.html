@@ -7,6 +7,17 @@
     <style>
         body { margin: 0; }
         canvas { display: block; }
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+        }
+        button {
+            font-size: 18px;
+            padding: 10px;
+            margin: 5px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -22,6 +33,7 @@
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.shadowMap.enabled = true;
+            renderer.setClearColor(new THREE.Color(0xeeeeee)); // Set background color
             document.body.appendChild(renderer.domElement);
 
             // Mars surface
@@ -107,6 +119,9 @@
             // Handle window resize
             window.addEventListener('resize', onWindowResize, false);
 
+            // Add HTML controls
+            setupHTMLControls();
+
             animate();
         }
 
@@ -124,6 +139,40 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function setupHTMLControls() {
+            const controlsDiv = document.createElement('div');
+            controlsDiv.id = 'controls';
+
+            const forwardButton = createControlButton('Forward', () => {
+                rover.position.z -= 0.1;
+            });
+            controlsDiv.appendChild(forwardButton);
+
+            const backButton = createControlButton('Backward', () => {
+                rover.position.z += 0.1;
+            });
+            controlsDiv.appendChild(backButton);
+
+            const leftButton = createControlButton('Left', () => {
+                rover.rotation.y += Math.PI / 4;
+            });
+            controlsDiv.appendChild(leftButton);
+
+            const rightButton = createControlButton('Right', () => {
+                rover.rotation.y -= Math.PI / 4;
+            });
+            controlsDiv.appendChild(rightButton);
+
+            document.body.appendChild(controlsDiv);
+        }
+
+        function createControlButton(label, onClick) {
+            const button = document.createElement('button');
+            button.textContent = label;
+            button.onclick = onClick;
+            return button;
         }
 
         window.onload = init;
