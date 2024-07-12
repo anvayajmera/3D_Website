@@ -12,6 +12,9 @@
             bottom: 10px;
             left: 10px;
             z-index: 1000;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 10px;
+            border-radius: 5px;
         }
         button {
             font-size: 18px;
@@ -28,6 +31,7 @@
         let scene, camera, renderer, rover, controls;
         let moveForward = false;
         let moveBackward = false;
+        let objects = [];
 
         function init() {
             // Scene setup
@@ -36,8 +40,13 @@
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.shadowMap.enabled = true;
-            renderer.setClearColor(new THREE.Color(0x000000)); // Set background color to black
             document.body.appendChild(renderer.domElement);
+
+            // Skybox
+            const loader = new THREE.TextureLoader();
+            loader.load('sky.png', function(texture) {
+                scene.background = texture;
+            });
 
             // Mars surface
             const marsTexture = new THREE.TextureLoader().load('mars.png'); // Replace with your mars.png texture
@@ -47,6 +56,7 @@
             marsSurface.rotation.x = -Math.PI / 2;
             marsSurface.receiveShadow = true;
             scene.add(marsSurface);
+            objects.push(marsSurface);
 
             // Rover
             const roverGroup = new THREE.Group();
@@ -95,6 +105,21 @@
             createWheel(-1, 0.2, 0.5);
             createWheel(-1, 0.2, -0.5);
 
+            // Add more parts for better detail
+            const antennaGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1);
+            const antennaMaterial = new THREE.MeshStandardMaterial({ color: 0xaaaaaa });
+            const antenna = new THREE.Mesh(antennaGeometry, antennaMaterial);
+            antenna.position.set(0.8, 1.5, 0);
+            antenna.castShadow = true;
+            roverGroup.add(antenna);
+
+            const sensorGeometry = new THREE.SphereGeometry(0.2);
+            const sensorMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+            const sensor = new THREE.Mesh(sensorGeometry, sensorMaterial);
+            sensor.position.set(0, 1.1, 0.5);
+            sensor.castShadow = true;
+            roverGroup.add(sensor);
+
             roverGroup.position.y = 0.5;
             scene.add(roverGroup);
             rover = roverGroup;
@@ -111,6 +136,9 @@
 
             camera.position.set(10, 10, 10);
             controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+            // Add rocks
+            addRocks();
 
             // Handle window resize
             window.addEventListener('resize', onWindowResize, false);
@@ -131,8 +159,33 @@
                 rover.translateZ(0.1); // Move backward
             }
 
+            // Apply gravity
+            if (rover.position.y > 0.5) {
+                rover.position.y -= 0.02; // Adjust the gravity value as needed
+            } else {
+                rover.position.y = 0.5; // Stop falling when on the ground
+            }
+
             controls.update();
             renderer.render(scene, camera);
+        }
+
+        function addRocks() {
+            const rockGeometry = new THREE.DodecahedronGeometry(0.5);
+            const rockMaterial = new THREE.MeshStandardMaterial({ color: 0x888888 });
+
+            for (let i = 0; i < 10; i++) {
+                const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+                rock.position.set(
+                    (Math.random() - 0.5) * 50,
+                    0.25, // Slightly above the ground
+                    (Math.random() - 0.5) * 50
+                );
+                rock.castShadow = true;
+                rock.receiveShadow = true;
+                scene.add(rock);
+                objects.push(rock);
+            }
         }
 
         function onWindowResize() {
@@ -160,12 +213,12 @@
             controlsDiv.appendChild(backButton);
 
             const leftButton = createControlButton('Left', () => {
-                rover.rotateY(Math.PI / 4);
+                rover.rotateY(Math.PI / 16);
             });
             controlsDiv.appendChild(leftButton);
 
             const rightButton = createControlButton('Right', () => {
-                rover.rotateY(-Math.PI / 4);
+                rover.rotateY(-Math.PI / 16);
             });
             controlsDiv.appendChild(rightButton);
 
